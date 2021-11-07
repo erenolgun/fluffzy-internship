@@ -28,7 +28,7 @@ function App() {
               className='text-sm bg-yellow-100 rounded-r-md px-3'
               type='submit'
             >
-              O
+              <i class='fas fa-search'></i>
             </button>
           </div>
           <div className='flex flex-col justify-between text-sm mt-6 px-1 md:text-base'>
