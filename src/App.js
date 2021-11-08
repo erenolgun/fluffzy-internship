@@ -36,6 +36,8 @@ function App() {
   const [value, setValue] = useState("");
   const [suggestions, setSuggestions] = useState([]);
 
+  const [searchResults, setSearchResults] = useState([]);
+
   const onChange = (event, { newValue }) => {
     setValue(newValue);
   };
@@ -55,7 +57,11 @@ function App() {
   };
 
   const submitHandler = () => {
-    console.log(value);
+    setSearchResults([]);
+
+    const api_key = process.env.REACT_APP_UNSPLASH_API_KEY;
+
+    console.log(api_key);
   };
 
   return (
@@ -63,7 +69,9 @@ function App() {
       <nav className='hidden md:flex md:justify-between md:mt-10'>
         <p>PhotoSearch.</p>
         <p>Fluffzy React Assignment</p>
-        <p className='border border-black px-3 py-0.5 cursor-pointer'>Log in</p>
+        <p className='border border-black px-3 py-0.5 cursor-pointer rounded-md'>
+          Log in
+        </p>
       </nav>
       <nav className='flex justify-between mt-10 items-center md:hidden'>
         <p>PhotoSearch.</p>
@@ -71,7 +79,7 @@ function App() {
           Log in
         </p>
       </nav>
-      <header className='py-24 mt-10 bg-blue-100 rounded-md'>
+      <header className='py-24 mt-10 bg-gray-100 rounded-md'>
         <div className='flex flex-col mx-10'>
           <p className='mx-auto text-center text-sm md:text-base'>
             Enter a keyword to search for a photo!
@@ -86,7 +94,7 @@ function App() {
               inputProps={inputProps}
             />
             <button
-              className='text-sm bg-yellow-100 rounded-r-md px-3'
+              className='text-sm bg-gray-100 rounded-r-md px-3 border border-gray-300'
               type='submit'
               onClick={submitHandler}
             >
@@ -95,6 +103,17 @@ function App() {
           </div>
         </div>
       </header>
+      <div className='grid grid-cols-1 gap-4 my-20 sm:grid-cols-2 lg:grid-cols-3'>
+        {searchResults.map((searchResult) => (
+          <div className=''>
+            <img
+              className='h-full object-cover'
+              src={searchResult.urls.regular}
+              alt={searchResult.alt_description}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
