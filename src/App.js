@@ -1,6 +1,7 @@
 import "./App.css";
 import Autosuggest from "react-autosuggest";
 import { useState } from "react";
+import axios from "axios";
 
 const searchQuery = [
   {
@@ -59,9 +60,9 @@ function App() {
   const submitHandler = () => {
     setSearchResults([]);
 
-    const api_key = process.env.REACT_APP_UNSPLASH_API_KEY;
+    const url = `https://api.unsplash.com/search/photos?page=1&query=${value}&client_id=${process.env.REACT_APP_UNSPLASH_API_KEY}`;
 
-    console.log(api_key);
+    axios.get(url).then((res) => setSearchResults(res.data.results));
   };
 
   return (
