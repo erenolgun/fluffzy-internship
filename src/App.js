@@ -2,42 +2,39 @@ import "./App.css";
 import Autosuggest from "react-autosuggest";
 import { useState } from "react";
 import axios from "axios";
-
-const searchQuery = [
-  {
-    name: "lorem",
-  },
-  {
-    name: "lorem",
-  },
-  {
-    name: "lorem",
-  },
-  {
-    name: "lorem",
-  },
-];
-
-const getSuggestions = (value) => {
-  const inputValue = value.trim().toLowerCase();
-  const inputLength = inputValue.length;
-
-  return inputLength === 0
-    ? []
-    : searchQuery.filter(
-        (lang) => lang.name.toLowerCase().slice(0, inputLength) === inputValue
-      );
-};
-
-const getSuggestionValue = (suggestion) => suggestion.name;
-
-const renderSuggestion = (suggestion) => <div>{suggestion.name}</div>;
+import Navbar from "./components/Navbar";
+import SearchResult from "./components/SearchResult";
 
 function App() {
+  const [searchQuery, setSearchQuery] = useState(
+    localStorage.getItem("searchQuery") === null
+      ? []
+      : JSON.parse(localStorage.getItem("searchQuery"))
+  );
+
   const [value, setValue] = useState("");
   const [suggestions, setSuggestions] = useState([]);
 
   const [searchResults, setSearchResults] = useState([]);
+
+  const [retrievedData, setRetrievedData] = useState(
+    localStorage.getItem("searchQuery")
+  );
+
+  const getSuggestions = (value) => {
+    const inputValue = value.trim().toLowerCase();
+    const inputLength = inputValue.length;
+
+    return inputLength === 0
+      ? []
+      : searchQuery.filter(
+          (lang) => lang.toLowerCase().slice(0, inputLength) === inputValue
+        );
+  };
+
+  const getSuggestionValue = (suggestion) => suggestion;
+
+  const renderSuggestion = (suggestion) => <div>{suggestion}</div>;
 
   const onChange = (event, { newValue }) => {
     setValue(newValue);
@@ -60,6 +57,33 @@ function App() {
   const submitHandler = () => {
     setSearchResults([]);
 
+    const localData = JSON.parse(retrievedData);
+
+    if (localData === null) {
+      const sendToLocal = [];
+      sendToLocal.push(value);
+      localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
+      setRetrievedData(localStorage.getItem("searchQuery"));
+      setSearchQuery(JSON.parse(localStorage.getItem("searchQuery")));
+    } else {
+      const sendToLocal = JSON.parse(retrievedData);
+      if (!sendToLocal.includes(value)) {
+        if (sendToLocal.length === 5) {
+          sendToLocal.shift();
+          sendToLocal.push(value);
+          localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
+          setRetrievedData(localStorage.getItem("searchQuery"));
+        } else {
+          sendToLocal.push(value);
+          localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
+          setRetrievedData(localStorage.getItem("searchQuery"));
+        }
+        setSearchQuery(JSON.parse(localStorage.getItem("searchQuery")));
+      } else {
+        console.log("mevcut");
+      }
+    }
+
     const url = `https://api.unsplash.com/search/photos?page=1&query=${value}&client_id=${process.env.REACT_APP_UNSPLASH_API_KEY}`;
 
     axios.get(url).then((res) => setSearchResults(res.data.results));
@@ -67,19 +91,7 @@ function App() {
 
   return (
     <div className='mx-10 md:mx-20 lg:mx-auto lg:max-w-4xl xl:max-w-5xl'>
-      <nav className='hidden md:flex md:justify-between md:mt-10'>
-        <p>PhotoSearch.</p>
-        <p>Fluffzy React Assignment</p>
-        <p className='border border-black px-3 py-0.5 cursor-pointer rounded-md'>
-          Log in
-        </p>
-      </nav>
-      <nav className='flex justify-between mt-10 items-center md:hidden'>
-        <p>PhotoSearch.</p>
-        <p className='border border-black px-3 py-0.5 cursor-pointer rounded-md'>
-          Log in
-        </p>
-      </nav>
+      <Navbar />
       <header className='py-24 mt-10 bg-gray-100 rounded-md'>
         <div className='flex flex-col mx-10'>
           <p className='mx-auto text-center text-sm md:text-base'>
@@ -106,13 +118,11 @@ function App() {
       </header>
       <div className='grid grid-cols-1 gap-4 my-20 sm:grid-cols-2 lg:grid-cols-3'>
         {searchResults.map((searchResult) => (
-          <div className=''>
-            <img
-              className='h-full object-cover'
-              src={searchResult.urls.regular}
-              alt={searchResult.alt_description}
-            />
-          </div>
+          <SearchResult
+            id={searchResult.id}
+            url={searchResult.urls.regular}
+            description={searchResult.alt_description}
+          />
         ))}
       </div>
     </div>
