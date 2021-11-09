@@ -1,11 +1,42 @@
 import "./App.css";
 import Autosuggest from "react-autosuggest";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import Navbar from "./components/Navbar";
 import SearchResult from "./components/SearchResult";
 
 function App() {
+  // AUTHENTICATION FUNCTIONS START
+  const [authorizationCode, setAuthorizationCode] = useState(
+    localStorage.getItem("auth_code")
+  );
+  const [user, setUser] = useState(localStorage.getItem("access_token"));
+
+  useEffect(() => {
+    if (authorizationCode !== null && user === null) {
+      axios
+        .post(
+          "https://unsplash.com/oauth/token?",
+          {},
+          {
+            params: {
+              client_id: process.env.REACT_APP_UNSPLASH_API_KEY,
+              client_secret: process.env.REACT_APP_UNSPLASH_SECRET_KEY,
+              redirect_uri: "http://localhost:3000/",
+              grant_type: "authorization_code",
+              code: authorizationCode,
+            },
+          }
+        )
+        .then((res) => {
+          localStorage.setItem("access_token", res.data.access_token);
+          setUser(res.data.access_token);
+        });
+    }
+  }, [authorizationCode]);
+  // AUTHENTICATION FUNCTIONS END
+
+  // SEARCH FUNCTIONS START
   const [searchQuery, setSearchQuery] = useState(
     localStorage.getItem("searchQuery") === null
       ? []
@@ -28,7 +59,9 @@ function App() {
     return inputLength === 0
       ? []
       : searchQuery.filter(
-          (lang) => lang.toLowerCase().slice(0, inputLength) === inputValue
+          (keyword) =>
+            keyword.toLowerCase().slice(0, inputLength) === inputValue
+          // keyword.includes(inputValue)
         );
   };
 
@@ -79,19 +112,26 @@ function App() {
           setRetrievedData(localStorage.getItem("searchQuery"));
         }
         setSearchQuery(JSON.parse(localStorage.getItem("searchQuery")));
-      } else {
-        console.log("mevcut");
       }
     }
 
-    const url = `https://api.unsplash.com/search/photos?page=1&query=${value}&client_id=${process.env.REACT_APP_UNSPLASH_API_KEY}`;
-
-    axios.get(url).then((res) => setSearchResults(res.data.results));
+    if (user === null) {
+      const url = `https://api.unsplash.com/search/photos?page=1&per_page=30&query=${value}&client_id=${process.env.REACT_APP_UNSPLASH_API_KEY}`;
+      axios.get(url).then((res) => setSearchResults(res.data.results));
+    } else {
+      const url = `https://api.unsplash.com/search/photos?page=1&per_page=30&query=${value}&client_id=${process.env.REACT_APP_UNSPLASH_API_KEY}&access_token=${user}`;
+      axios.get(url).then((res) => setSearchResults(res.data.results));
+    }
   };
+
+  const handleUpdateResult = (value) => {
+    setSearchResults(value);
+  };
+  // SEARCH FUNCTIONS END
 
   return (
     <div className='mx-10 md:mx-20 lg:mx-auto lg:max-w-4xl xl:max-w-5xl'>
-      <Navbar />
+      <Navbar user={user} />
       <header className='py-24 mt-10 bg-gray-100 rounded-md'>
         <div className='flex flex-col mx-10'>
           <p className='mx-auto text-center text-sm md:text-base'>
@@ -119,7 +159,11 @@ function App() {
       <div className='grid grid-cols-1 gap-4 my-20 sm:grid-cols-2 lg:grid-cols-3'>
         {searchResults.map((searchResult) => (
           <SearchResult
-            id={searchResult.id}
+            handleUpdateResult={handleUpdateResult}
+            value={value}
+            key={searchResult.id}
+            photo={searchResult}
+            user={user}
             url={searchResult.urls.regular}
             description={searchResult.alt_description}
           />
