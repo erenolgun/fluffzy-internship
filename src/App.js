@@ -1,11 +1,15 @@
 import "./App.css";
-import Autosuggest from "react-autosuggest";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Navbar from "./components/Navbar";
 import SearchResult from "./components/SearchResult";
+import SuggestionItem from "./components/SuggestionItem";
 
 function App() {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isSearched, setIsSearched] = useState(false);
+  const [isFilled, setIsFilled] = useState(false);
+
   // AUTHENTICATION FUNCTIONS START
   const [authorizationCode, setAuthorizationCode] = useState(
     localStorage.getItem("auth_code")
@@ -40,11 +44,10 @@ function App() {
   const [searchQuery, setSearchQuery] = useState(
     localStorage.getItem("searchQuery") === null
       ? []
-      : JSON.parse(localStorage.getItem("searchQuery"))
+      : JSON.parse(localStorage.getItem("searchQuery")).reverse()
   );
 
   const [value, setValue] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
 
   const [searchResults, setSearchResults] = useState([]);
 
@@ -52,69 +55,69 @@ function App() {
     localStorage.getItem("searchQuery")
   );
 
-  const getSuggestions = (value) => {
-    const inputValue = value.trim().toLowerCase();
-    const inputLength = inputValue.length;
-
-    return inputLength === 0
-      ? []
-      : searchQuery.filter(
-          (keyword) =>
-            keyword.toLowerCase().slice(0, inputLength) === inputValue
-          // keyword.includes(inputValue)
-        );
-  };
-
-  const getSuggestionValue = (suggestion) => suggestion;
-
-  const renderSuggestion = (suggestion) => <div>{suggestion}</div>;
-
-  const onChange = (event, { newValue }) => {
+  const handleAutocomplete = (newValue) => {
     setValue(newValue);
-  };
-
-  const onSuggestionsFetchRequested = ({ value }) => {
-    setSuggestions(getSuggestions(value));
-  };
-
-  const onSuggestionsClearRequested = () => {
-    setSuggestions([]);
-  };
-
-  const inputProps = {
-    placeholder: "Search free high-resolution photos",
-    value,
-    onChange: onChange,
   };
 
   const submitHandler = () => {
     setSearchResults([]);
+    setIsSearched(false);
 
     const localData = JSON.parse(retrievedData);
 
-    if (localData === null) {
-      const sendToLocal = [];
-      sendToLocal.push(value);
-      localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
-      setRetrievedData(localStorage.getItem("searchQuery"));
-      setSearchQuery(JSON.parse(localStorage.getItem("searchQuery")));
-    } else {
-      const sendToLocal = JSON.parse(retrievedData);
-      if (!sendToLocal.includes(value)) {
-        if (sendToLocal.length === 5) {
-          sendToLocal.shift();
-          sendToLocal.push(value);
-          localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
-          setRetrievedData(localStorage.getItem("searchQuery"));
+    if (value !== "") {
+      if (localData === null) {
+        const sendToLocal = [];
+        sendToLocal.push(value);
+        localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
+        setRetrievedData(localStorage.getItem("searchQuery"));
+        setSearchQuery(
+          JSON.parse(localStorage.getItem("searchQuery")).reverse()
+        );
+      } else {
+        const sendToLocal = JSON.parse(retrievedData);
+        if (!sendToLocal.includes(value)) {
+          if (sendToLocal.length === 5) {
+            sendToLocal.shift();
+            sendToLocal.push(value);
+            localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
+            setRetrievedData(localStorage.getItem("searchQuery"));
+          } else {
+            sendToLocal.push(value);
+            localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
+            setRetrievedData(localStorage.getItem("searchQuery"));
+          }
         } else {
-          sendToLocal.push(value);
-          localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
-          setRetrievedData(localStorage.getItem("searchQuery"));
+          if (sendToLocal.length === 5) {
+            const sendIncludeToLocal = sendToLocal.filter(
+              (item) => item !== value
+            );
+            sendIncludeToLocal.push(value);
+            localStorage.setItem(
+              "searchQuery",
+              JSON.stringify(sendIncludeToLocal)
+            );
+            setRetrievedData(localStorage.getItem("searchQuery"));
+          }
         }
-        setSearchQuery(JSON.parse(localStorage.getItem("searchQuery")));
+        setSearchQuery(
+          JSON.parse(localStorage.getItem("searchQuery")).reverse()
+        );
       }
+
+      setIsFilled(false);
+
+      setTimeout(() => {
+        setIsSearched(true);
+      }, 2000);
+    } else {
+      setIsFilled(true);
     }
 
+    getResult();
+  };
+
+  const getResult = () => {
     if (user === null) {
       const url = `https://api.unsplash.com/search/photos?page=1&per_page=30&query=${value}&client_id=${process.env.REACT_APP_UNSPLASH_API_KEY}`;
       axios.get(url).then((res) => setSearchResults(res.data.results));
@@ -138,14 +141,31 @@ function App() {
             Enter a keyword to search for a photo!
           </p>
           <div className='flex mt-4'>
-            <Autosuggest
-              suggestions={suggestions}
-              onSuggestionsFetchRequested={onSuggestionsFetchRequested}
-              onSuggestionsClearRequested={onSuggestionsClearRequested}
-              getSuggestionValue={getSuggestionValue}
-              renderSuggestion={renderSuggestion}
-              inputProps={inputProps}
-            />
+            <div className='w-full relative'>
+              <input
+                className='w-full h-9 py-3 px-5 text-sm rounded-l-md border border-gray-300 border-r-0 outline-none'
+                type='text'
+                placeholder='Search free high-resolution photos'
+                onFocus={() => setIsFocused(true)}
+                onChange={(e) => setValue(e.target.value)}
+                value={value}
+              />
+              {isFocused && (
+                <div className='block absolute top-10 w-full border border-gray-200 bg-white text-sm rounded-md z-10'>
+                  {searchQuery.map((item, index) => {
+                    if (item.startsWith(value)) {
+                      return (
+                        <SuggestionItem
+                          key={index}
+                          item={item}
+                          handleAutocomplete={handleAutocomplete}
+                        />
+                      );
+                    }
+                  })}
+                </div>
+              )}
+            </div>
             <button
               className='text-sm bg-gray-100 rounded-r-md px-3 border border-gray-300'
               type='submit'
@@ -156,7 +176,7 @@ function App() {
           </div>
         </div>
       </header>
-      <div className='grid grid-cols-1 gap-4 my-20 sm:grid-cols-2 lg:grid-cols-3'>
+      <div className='grid grid-cols-1 gap-4 my-28 sm:grid-cols-2 lg:grid-cols-3'>
         {searchResults.map((searchResult) => (
           <SearchResult
             handleUpdateResult={handleUpdateResult}
@@ -169,6 +189,20 @@ function App() {
           />
         ))}
       </div>
+      {isSearched && searchResults.length === 0 && (
+        <div className='flex -mt-32'>
+          <div className='mx-auto'>
+            There is no result with a keyword that you entered.
+          </div>
+        </div>
+      )}
+      {isFilled && (
+        <div className='flex -mt-32'>
+          <div className='mx-auto'>
+            Please enter a keyword to search a photo!
+          </div>
+        </div>
+      )}
     </div>
   );
 }

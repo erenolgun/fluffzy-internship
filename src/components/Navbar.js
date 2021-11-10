@@ -25,7 +25,7 @@ const Navbar = (props) => {
       <nav className='flex justify-between mt-10 items-center'>
         <a href='/'>PhotoSearch.</a>
         <p className='hidden md:flex'>Fluffzy React Assignment</p>
-        {props.user === null ? (
+        {localStorage.getItem("auth_code") === null ? (
           <a
             className='border border-black px-3 py-0.5 cursor-pointer rounded-md'
             href={base_url}
