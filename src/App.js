@@ -68,7 +68,7 @@ function App() {
     if (value !== "") {
       if (localData === null) {
         const sendToLocal = [];
-        sendToLocal.push(value);
+        sendToLocal.push(value.toLowerCase());
         localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
         setRetrievedData(localStorage.getItem("searchQuery"));
         setSearchQuery(
@@ -76,23 +76,23 @@ function App() {
         );
       } else {
         const sendToLocal = JSON.parse(retrievedData);
-        if (!sendToLocal.includes(value)) {
+        if (!sendToLocal.includes(value.toLowerCase())) {
           if (sendToLocal.length === 5) {
             sendToLocal.shift();
-            sendToLocal.push(value);
+            sendToLocal.push(value.toLowerCase());
             localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
             setRetrievedData(localStorage.getItem("searchQuery"));
           } else {
-            sendToLocal.push(value);
+            sendToLocal.push(value.toLowerCase());
             localStorage.setItem("searchQuery", JSON.stringify(sendToLocal));
             setRetrievedData(localStorage.getItem("searchQuery"));
           }
         } else {
           if (sendToLocal.length === 5) {
             const sendIncludeToLocal = sendToLocal.filter(
-              (item) => item !== value
+              (item) => item !== value.toLowerCase()
             );
-            sendIncludeToLocal.push(value);
+            sendIncludeToLocal.push(value.toLowerCase());
             localStorage.setItem(
               "searchQuery",
               JSON.stringify(sendIncludeToLocal)
