@@ -26,18 +26,16 @@ const SearchResult = (props) => {
         }
       )
       .then((res) => {
-        console.log(res);
         setIsLiked(!isLiked);
       });
   };
 
-  const dislikeHandler = () => {
+  const unlikeHandler = () => {
     axios
       .delete(
         `https://api.unsplash.com/photos/${props.photo.id}/like?access_token=${props.user}`
       )
       .then((res) => {
-        console.log(res);
         setIsLiked(!isLiked);
       });
   };
@@ -57,10 +55,10 @@ const SearchResult = (props) => {
           ) : (
             <div
               className='text-2xl flex items-center cursor-pointer'
-              onClick={dislikeHandler}
+              onClick={unlikeHandler}
             >
-              <i class='fas fa-heart-broken mr-2'></i>
-              <p className='text-xl'>Dislike</p>
+              <i className='fas fa-heart-broken mr-2'></i>
+              <p className='text-xl'>Unlike</p>
             </div>
           )}
         </div>
